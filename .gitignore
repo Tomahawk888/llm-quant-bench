@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+# intermediate per-run fetches (canonical: results.json, results_70b.json)
+r7b.json
+r70b.json
+rqtip.json
+_bench_*

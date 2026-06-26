@@ -7,11 +7,11 @@ per-token python overhead is removed by graph capture.
 
 Run:  pip install ninja transformers==4.44.2 ; python llama_serve2.py
 """
-import torch, torch.nn as nn, time
+import os, torch, torch.nn as nn, time
 from torch.utils.cpp_extension import load_inline
 from transformers import AutoModelForCausalLM, AutoTokenizer, StaticCache
 
-MODEL = "NousResearch/Llama-2-7b-hf"
+MODEL = os.environ.get("SERVE_MODEL", "NousResearch/Llama-2-7b-hf")
 K = 16; NEW = 128
 TARGETS = ("q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj")
 

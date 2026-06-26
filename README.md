@@ -93,20 +93,24 @@ CUDA-graph captured), the kernel runs a token's decode work at **172 vs 70 tok/s
 buffers, decode step captured as one CUDA graph over a static-cache loop), this
 realizes **x2.0 end-to-end decode on Llama-2-7B: 123.4 vs 61.6 tok/s at 4.73 vs
 13.58 GB** (`llama_serve2.py`). The arc: x0.73 naive -> x0.85 cast-free eager -> x2.0
-CUDA-graphed; the per-token python overhead was the whole gap, not the kernel.
+CUDA-graphed; the per-token python overhead was the whole gap, not the kernel. The win
+grows with size: **Llama-2-13B on an A40 decodes 49.0 vs 20.0 tok/s (x2.46) at 8.50 vs
+26.17 GB (3.08x less)**.
 
 **Accuracy, and three negative results.** wikitext-2 PPL 5.83 (fp16) -> 6.34 (4-bit
-codebook). Closing the gap to AWQ fails three ways: simple activation-aware
+codebook). Closing the gap to AWQ fails four ways: simple activation-aware
 calibration 6.17, full AWQ (output-error scale search + clipping) 6.21 (no
-improvement), naive vector quantizer diverges. The scalar codebook's accuracy ceiling
-is structural; its value is memory and kernel speed.
+improvement), naive vector quantizer diverges, incoherence rotation only marginal
+(6.34 -> 6.29). The served model is healthy (coherent text at PPL 6.34); the scalar
+codebook's accuracy ceiling is structural, its value is memory and kernel speed.
 
 Scripts: `llama_quant.py` (4-bit PPL + VRAM), `llama_calib.py` (activation-weighted
 calibration), `llama_awq.py` / `llama_awq_full.py` (AWQ scale search + clipping),
 `llama_vq.py` (vector quantizer), `llama_kernel_gen.py` (naive end-to-end decode),
 `llama_serve.py` / `llama_serve2.py` (clean cast-free integration + manual CUDA-graph
-decode that realizes x2.0 end-to-end), `graph_decode.py` / `cuda_graph_test.py`
-(kernel vs cuBLAS under CUDA graphs).
+decode that realizes x2.0 end-to-end; `SERVE_MODEL` env selects 7B/13B), `llama_ac.py`
+(served-model quality check + incoherence experiment), `graph_decode.py` /
+`cuda_graph_test.py` (kernel vs cuBLAS under CUDA graphs).
 
 ## Files
 

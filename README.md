@@ -79,9 +79,36 @@ python plot_mem70.py   # 70B memory bar (uses results_70b.json)
 images ship an old torch / CUDA 11.8 while modern quant libs need torch 2.4 / CUDA
 12; pin torch so nothing silently upgrades it).
 
+## Codebook scheme on a real model
+
+This repo also hosts the model-level experiments for the fused codebook kernel from
+[`cuda-codebook`](https://github.com/Tomahawk888/cuda-codebook): quantizing Llama-2
+7B with the scalar per-output-channel codebook and measuring it end to end. All on
+the same harness, fixed seed, RTX 4090 / H100.
+
+**Memory and speed (the wins).** All 224 projection layers quantized to 4-bit drop
+peak VRAM 13.56 -> 4.63 GB (**2.9x**). Against the real cuBLAS GEMV path (`F.linear`,
+CUDA-graph captured), the kernel runs a token's decode work at **172 vs 70 tok/s
+(x2.4)**; the naive end-to-end x0.73 was per-op `fp32->fp16` casts in the wrapper,
+not the kernel.
+
+**Accuracy, and three negative results.** wikitext-2 PPL 5.83 (fp16) -> 6.34 (4-bit
+codebook). Closing the gap to AWQ fails three ways: simple activation-aware
+calibration 6.17, full AWQ (output-error scale search + clipping) 6.21 (no
+improvement), naive vector quantizer diverges. The scalar codebook's accuracy ceiling
+is structural; its value is memory and kernel speed.
+
+Scripts: `llama_quant.py` (4-bit PPL + VRAM), `llama_calib.py` (activation-weighted
+calibration), `llama_awq.py` / `llama_awq_full.py` (AWQ scale search + clipping),
+`llama_vq.py` (vector quantizer), `llama_kernel_gen.py` (end-to-end decode tok/s with
+the kernel), `graph_decode.py` / `cuda_graph_test.py` (kernel vs cuBLAS under CUDA
+graphs).
+
 ## Files
 
-- `bench_quant.py` - the harness (load, time decode/prefill, full PPL, JSON out)
+- `bench_quant.py` - the AWQ/AQLM/fp16 harness (load, time decode/prefill, full PPL)
+- `llama_*.py` - codebook-scheme model-level experiments (see section above)
+- `graph_decode.py`, `cuda_graph_test.py` - kernel vs cuBLAS GEMV under CUDA graphs
 - `plot_pareto.py` - speed vs PPL scatter, bubble area = VRAM
 - `plot_mem70.py` - 70B memory bar (fits-on-one-GPU)
 - `setup.sh` - working dependency recipe

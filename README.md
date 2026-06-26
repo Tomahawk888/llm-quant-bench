@@ -89,8 +89,11 @@ the same harness, fixed seed, RTX 4090 / H100.
 **Memory and speed (the wins).** All 224 projection layers quantized to 4-bit drop
 peak VRAM 13.56 -> 4.63 GB (**2.9x**). Against the real cuBLAS GEMV path (`F.linear`,
 CUDA-graph captured), the kernel runs a token's decode work at **172 vs 70 tok/s
-(x2.4)**; the naive end-to-end x0.73 was per-op `fp32->fp16` casts in the wrapper,
-not the kernel.
+(x2.4)**. Integrated cleanly into a real model (kernel writes fp16 into preallocated
+buffers, decode step captured as one CUDA graph over a static-cache loop), this
+realizes **x2.0 end-to-end decode on Llama-2-7B: 123.4 vs 61.6 tok/s at 4.73 vs
+13.58 GB** (`llama_serve2.py`). The arc: x0.73 naive -> x0.85 cast-free eager -> x2.0
+CUDA-graphed; the per-token python overhead was the whole gap, not the kernel.
 
 **Accuracy, and three negative results.** wikitext-2 PPL 5.83 (fp16) -> 6.34 (4-bit
 codebook). Closing the gap to AWQ fails three ways: simple activation-aware
@@ -100,9 +103,10 @@ is structural; its value is memory and kernel speed.
 
 Scripts: `llama_quant.py` (4-bit PPL + VRAM), `llama_calib.py` (activation-weighted
 calibration), `llama_awq.py` / `llama_awq_full.py` (AWQ scale search + clipping),
-`llama_vq.py` (vector quantizer), `llama_kernel_gen.py` (end-to-end decode tok/s with
-the kernel), `graph_decode.py` / `cuda_graph_test.py` (kernel vs cuBLAS under CUDA
-graphs).
+`llama_vq.py` (vector quantizer), `llama_kernel_gen.py` (naive end-to-end decode),
+`llama_serve.py` / `llama_serve2.py` (clean cast-free integration + manual CUDA-graph
+decode that realizes x2.0 end-to-end), `graph_decode.py` / `cuda_graph_test.py`
+(kernel vs cuBLAS under CUDA graphs).
 
 ## Files
 

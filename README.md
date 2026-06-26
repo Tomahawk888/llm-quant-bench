@@ -114,7 +114,9 @@ AQLM-2Bit-2x8 checkpoint: PPL 7.63 + confirms its codebooks/codes/scales map exa
 the `avq_gemv` kernel), `llama_advq.py` (greedy residual additive-VQ, ties scalar at
 4-bit), `llama_aqlm_train.py` (reproduces AQLM's beam-search + least-squares training:
 M=4 reaches PPL 6.13, **beating the scalar 4-bit codebook 6.34** at equal bits, while the
-kernel decodes it at x2.39), `graph_decode.py` / `cuda_graph_test.py` (kernel vs cuBLAS
+kernel decodes it at x2.39; `CALIB=1` tries naive diagonal-Hessian calibration, a negative
+result that regresses to 8.6, real AQLM calibration needs the full Hessian + sequential
+error correction), `graph_decode.py` / `cuda_graph_test.py` (kernel vs cuBLAS
 under CUDA graphs).
 
 ## Files

@@ -111,8 +111,11 @@ calibration), `llama_awq.py` / `llama_awq_full.py` (AWQ scale search + clipping)
 decode that realizes x2.0 end-to-end; `SERVE_MODEL` env selects 7B/13B), `llama_ac.py`
 (served-model quality check + incoherence experiment), `llama_aqlm.py` (loads a real
 AQLM-2Bit-2x8 checkpoint: PPL 7.63 + confirms its codebooks/codes/scales map exactly onto
-the `avq_gemv` kernel), `graph_decode.py` / `cuda_graph_test.py` (kernel vs cuBLAS under
-CUDA graphs).
+the `avq_gemv` kernel), `llama_advq.py` (greedy residual additive-VQ, ties scalar at
+4-bit), `llama_aqlm_train.py` (reproduces AQLM's beam-search + least-squares training:
+M=4 reaches PPL 6.13, **beating the scalar 4-bit codebook 6.34** at equal bits, while the
+kernel decodes it at x2.39), `graph_decode.py` / `cuda_graph_test.py` (kernel vs cuBLAS
+under CUDA graphs).
 
 ## Files
 
